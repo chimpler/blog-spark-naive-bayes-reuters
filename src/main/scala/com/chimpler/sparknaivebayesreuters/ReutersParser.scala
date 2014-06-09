@@ -8,15 +8,16 @@ object ReutersParser {
   def parseAll(xmlFiles: Iterable[String]) = xmlFiles flatMap parse
 
   def parse(xmlFile: String) = {
-    val docs = mutable.ArrayBuffer.empty[ReutersDoc]
+    val docs = mutable.ArrayBuffer.empty[Document]
     val xml = new XMLEventReader(Source.fromFile(xmlFile, "latin1"))
-    var currentDoc = ReutersDoc()
+    var currentDoc: Document = null
     var inTopics = false
     var inLabel = false
     var inBody = false
     for (event <- xml) {
       event match {
-        case EvElemStart(_, "REUTERS", _, _) => currentDoc = ReutersDoc()
+        case EvElemStart(_, "REUTERS", attrs, _) =>
+          currentDoc = Document(attrs.get("NEWID").get.head.text)
 
         case EvElemEnd(_, "REUTERS") =>
           if (currentDoc.labels.nonEmpty) {
@@ -51,4 +52,4 @@ object ReutersParser {
   }
 }
 
-case class ReutersDoc(body: String = "", labels: Set[String] = Set.empty)
+case class Document(docId: String, body: String = "", labels: Set[String] = Set.empty)
