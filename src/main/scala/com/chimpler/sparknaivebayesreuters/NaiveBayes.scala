@@ -27,14 +27,15 @@ object NaiveBayesExample extends App {
    * REPL loop to enter different urls
    */
   def console(naiveBayesAndDictionaries: NaiveBayesAndDictionaries) = {
+    println("Enter 'q' to quit")
     val consoleReader = new ConsoleReader()
     while ( {
       consoleReader.readLine("url> ") match {
-        case s if s == "q" => true
+        case s if s == "q" => false
         case url: String =>
           predict(naiveBayesAndDictionaries, url)
-          false
-        case _ => false
+          true
+        case _ => true
       }
     }) {}
 
@@ -51,8 +52,8 @@ object NaiveBayesExample extends App {
 
     val tfIdfs = naiveBayesAndDictionaries.termDictionary.tfIdfs(tokens, naiveBayesAndDictionaries.idfs)
     val vector = naiveBayesAndDictionaries.termDictionary.vectorize(tfIdfs)
+    println("---> " + vector)
     val labelId = naiveBayesAndDictionaries.model.predict(vector)
-    // convert terms to vector if they exist
 
     // convert label from double
     println("Label: " + naiveBayesAndDictionaries.labelDictionary.valueOf(labelId.toInt))

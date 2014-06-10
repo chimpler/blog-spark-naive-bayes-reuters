@@ -25,7 +25,7 @@ class Dictionary(dict: Seq[String]) extends Serializable {
     (filteredTerms.groupBy(identity).map {
       // mapValues not implemented :-(
       case (term, instances) =>
-        (indexOf(term), instances.size / filteredTerms.size * idfs(term))
+        (indexOf(term), math.log10(instances.size.toDouble / filteredTerms.size.toDouble + 1) * idfs(term))
     }).toSeq.sortBy(_._1) // sort by termId
   }
 
@@ -36,16 +36,4 @@ class Dictionary(dict: Seq[String]) extends Serializable {
 
     Vectors.sparse(dict.size, pairs)
   }
-
-  //  def vectorize(words: Seq[String]) = {
-  //    // term => number of occurences
-  //    val pairs = words.groupBy(identity).mapValues(_.size).map {
-  //      case (term, count) => (termToIndex(term), count.toDouble)
-  //    }.toSeq
-  //    Vectors.sparse(pairs.size, pairs)
-  //  }
-  //
-  //  def toValues(vector: Seq[Int]) = {
-  //    vector.map(indexToTerm)
-  //  }
 }
