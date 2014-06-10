@@ -14,6 +14,13 @@ libraryDependencies <<= scalaVersion {
     // Lucene
     "org.apache.lucene" % "lucene-core" % "4.8.1",
     // for Porter Stemmer
-    "org.apache.lucene" % "lucene-analyzers-common" % "4.8.1"
+    "org.apache.lucene" % "lucene-analyzers-common" % "4.8.1",
+    // Guava for the dictionary
+    "com.google.guava" % "guava" % "17.0",
+    // article extractor
+    "com.gravity" %% "goose" % "2.1.23-SNAPSHOT"
   )
 }
+
+// used for goose
+resolvers += Resolver.mavenLocal

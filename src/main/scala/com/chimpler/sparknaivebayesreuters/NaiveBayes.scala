@@ -6,6 +6,7 @@ import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.linalg.Vectors
 import scala.collection.mutable
+import com.gravity.goose.{Goose, Configuration}
 import jline.ConsoleReader
 import java.util
 
@@ -41,18 +42,20 @@ object NaiveBayesExample extends App {
   }
 
   def predict(naiveBayesAndDictionaries: NaiveBayesAndDictionaries, url: String) = {
-//    Tokenizer.tokenize(content)
-    val termsArray = new Array[Double](naiveBayesAndDictionaries.numTerms)
-    util.Arrays.fill(termsArray, 0D)
-
     // extract content from web page
+    val config = new Configuration
+    config.setEnableImageFetching(false)
+    val goose = new Goose(config)
+    val content = goose.extractContent(url).cleanedArticleText
+    val tokens = Tokenizer.tokenize(content)
 
-    // fill up array from dictionary
-
-    naiveBayesAndDictionaries.model.predict(Vectors.dense(termsArray))
+    val tfIdfs = naiveBayesAndDictionaries.termDictionary.tfIdfs(tokens, naiveBayesAndDictionaries.idfs)
+    val vector = naiveBayesAndDictionaries.termDictionary.vectorize(tfIdfs)
+    val labelId = naiveBayesAndDictionaries.model.predict(vector)
     // convert terms to vector if they exist
 
     // convert label from double
+    println("Label: " + naiveBayesAndDictionaries.labelDictionary.valueOf(labelId.toInt))
   }
 
   /**
@@ -77,54 +80,36 @@ object NaiveBayesExample extends App {
     // create dictionary term => id
     // and id => term
     val terms = termDocsRdd.flatMap(_.terms).distinct().collect()
-    val numTerms = terms.size
-    val termsToIndex = terms.zipWithIndex.map {
-      case (term, index) => term -> index
-    }.toMap
-    val indexToTerm = terms.zipWithIndex.map {
-      case (term, index) => index -> term
-    }.toMap
+    val termDict = new Dictionary(terms)
 
     val labels = termDocsRdd.flatMap(_.labels).distinct().collect()
-    val labelsToIndex = labels.zipWithIndex.map {
-      case (label, index) => label -> index
-    }.toMap
-    val indexToLabel = labels.zipWithIndex.map {
-      case (label, index) => index -> label
-    }.toMap
+    val labelDict = new Dictionary(labels)
 
     // compute TFIDF and generate vectors
     // for IDF
-    val numDocsPerTerm = (termDocsRdd.flatMap(termDoc => termDoc.terms.map((termDoc.doc, _))).distinct().groupBy(_._2) map {
-      // too bad mapValues is not implemented
-      case (term, docs) => term -> docs.size
+    val idfs = (termDocsRdd.flatMap(termDoc => termDoc.terms.map((termDoc.doc, _))).distinct().groupBy(_._2) map {
+      // mapValues not implemented :-(
+      case (termIndex, docs) => termIndex -> math.log10(numDocs / docs.size)
     }).collect.toMap
 
     val tfidfs = termDocsRdd flatMap {
       termDoc =>
-        val tfIdfsArray = new Array[Double](numTerms)
-        util.Arrays.fill(tfIdfsArray, 0)
-
-        termDoc.terms.groupBy(identity).foreach {
-          case (term, instances) =>
-            tfIdfsArray(termsToIndex(term)) = instances.size * math.log10(numDocs / numDocsPerTerm(term))
-        }
-
+        val termPairs = termDict.tfIdfs(termDoc.terms, idfs)
+        termPairs
         termDoc.labels.map {
           label =>
-            val labelId = labelsToIndex(label).toDouble
-            LabeledPoint(labelId, Vectors.dense(tfIdfsArray))
+            val labelId = labelDict.indexOf(label).toDouble
+            val vector = Vectors.sparse(termDict.count, termPairs)
+            LabeledPoint(labelId, vector)
         }
     }
 
     val model = NaiveBayes.train(tfidfs)
-    NaiveBayesAndDictionaries(model, numTerms, termsToIndex, indexToTerm, labelsToIndex, indexToLabel)
+    NaiveBayesAndDictionaries(model, termDict, labelDict, idfs)
   }
 }
 
 case class NaiveBayesAndDictionaries(model: NaiveBayesModel,
-                                     numTerms: Int,
-                                     termsToIndex: Map[String, Int],
-                                     indexToTerms: Map[Int, String],
-                                     labelToIndex: Map[String, Int],
-                                     indexToLabel: Map[Int, String])
+                                     termDictionary: Dictionary,
+                                     labelDictionary: Dictionary,
+                                     idfs: Map[String, Double])
