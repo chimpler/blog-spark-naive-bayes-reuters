@@ -5,6 +5,8 @@ import scala.io.Source
 import scala.collection.mutable
 
 object ReutersParser {
+  def PopularCategories = Seq("money", "fx", "crude", "grain", "trade", "interest", "wheat", "ship", "corn", "oil", "dlr", "gas", "oilseed", "supply", "sugar", "gnp", "coffee", "veg", "gold", "nat", "soybean", "bop", "livestock", "TopicCount", "cpi")
+
   def parseAll(xmlFiles: Iterable[String]) = xmlFiles flatMap parse
 
   def parse(xmlFile: String) = {
@@ -38,7 +40,7 @@ object ReutersParser {
 
         case EvText(text) =>
           if (text.trim.nonEmpty) {
-            if (inTopics && inLabel) {
+            if (inTopics && inLabel && PopularCategories.contains(text)) {
               currentDoc = currentDoc.copy(labels = currentDoc.labels + text)
             } else if (inBody) {
               currentDoc = currentDoc.copy(body = currentDoc.body + text.trim)

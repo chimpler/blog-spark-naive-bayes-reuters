@@ -24,15 +24,12 @@ class Dictionary(dict: Seq[String]) extends Serializable {
     val filteredTerms = terms.filter(idfs contains)
     (filteredTerms.groupBy(identity).map {
       case (term, instances) =>
+        println(term + "===============> " + (idfs(term) *  (instances.size.toDouble / filteredTerms.size.toDouble)))
         (indexOf(term), (instances.size.toDouble / filteredTerms.size.toDouble) * idfs(term))
     }).toSeq.sortBy(_._1) // sort by termId
   }
 
   def vectorize(tfIdfs: Iterable[(Int, Double)]) = {
-    val pairs = tfIdfs.map {
-      case (termIndex, tfIdf) => (termIndex, tfIdf)
-    }.toSeq
-
-    Vectors.sparse(dict.size, pairs)
+    Vectors.sparse(dict.size, tfIdfs.toSeq)
   }
 }

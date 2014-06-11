@@ -52,7 +52,7 @@ object NaiveBayesExample extends App {
 
     val tfIdfs = naiveBayesAndDictionaries.termDictionary.tfIdfs(tokens, naiveBayesAndDictionaries.idfs)
     val vector = naiveBayesAndDictionaries.termDictionary.vectorize(tfIdfs)
-    println("---> " + vector)
+
     val labelId = naiveBayesAndDictionaries.model.predict(vector)
 
     // convert label from double
@@ -80,7 +80,7 @@ object NaiveBayesExample extends App {
 
     // create dictionary term => id
     // and id => term
-    val terms = termDocsRdd.flatMap(_.terms).distinct().collect()
+    val terms = termDocsRdd.flatMap(_.terms).distinct().collect().sortBy(identity)
     val termDict = new Dictionary(terms)
 
     val labels = termDocsRdd.flatMap(_.labels).distinct().collect()
@@ -90,13 +90,13 @@ object NaiveBayesExample extends App {
     // for IDF
     val idfs = (termDocsRdd.flatMap(termDoc => termDoc.terms.map((termDoc.doc, _))).distinct().groupBy(_._2) map {
       // mapValues not implemented :-(
-      case (termIndex, docs) => termIndex -> math.log(numDocs.toDouble / docs.size.toDouble)
+      case (term, docs) => term -> numDocs.toDouble
     }).collect.toMap
 
     val tfidfs = termDocsRdd flatMap {
       termDoc =>
         val termPairs = termDict.tfIdfs(termDoc.terms, idfs)
-        termDoc.labels.map {
+        termDoc.labels.headOption.map {
           label =>
             val labelId = labelDict.indexOf(label).toDouble
             val vector = Vectors.sparse(termDict.count, termPairs)
