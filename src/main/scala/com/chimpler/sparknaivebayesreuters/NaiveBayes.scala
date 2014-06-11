@@ -90,13 +90,12 @@ object NaiveBayesExample extends App {
     // for IDF
     val idfs = (termDocsRdd.flatMap(termDoc => termDoc.terms.map((termDoc.doc, _))).distinct().groupBy(_._2) map {
       // mapValues not implemented :-(
-      case (termIndex, docs) => termIndex -> math.log10(numDocs / docs.size)
+      case (termIndex, docs) => termIndex -> math.log(numDocs.toDouble / docs.size.toDouble)
     }).collect.toMap
 
     val tfidfs = termDocsRdd flatMap {
       termDoc =>
         val termPairs = termDict.tfIdfs(termDoc.terms, idfs)
-        termPairs
         termDoc.labels.map {
           label =>
             val labelId = labelDict.indexOf(label).toDouble
@@ -105,6 +104,8 @@ object NaiveBayesExample extends App {
         }
     }
 
+    println("TFIDFS: " + tfidfs.collect().head.features.toArray.mkString(","))
+    println("LABELS: " + labels.mkString("[", ", ", "]"))
     val model = NaiveBayes.train(tfidfs)
     NaiveBayesAndDictionaries(model, termDict, labelDict, idfs)
   }

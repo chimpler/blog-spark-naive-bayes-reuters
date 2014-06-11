@@ -23,9 +23,8 @@ class Dictionary(dict: Seq[String]) extends Serializable {
   def tfIdfs(terms: Seq[String], idfs: Map[String, Double]) = {
     val filteredTerms = terms.filter(idfs contains)
     (filteredTerms.groupBy(identity).map {
-      // mapValues not implemented :-(
       case (term, instances) =>
-        (indexOf(term), math.log10(instances.size.toDouble / filteredTerms.size.toDouble + 1) * idfs(term))
+        (indexOf(term), (instances.size.toDouble / filteredTerms.size.toDouble) * idfs(term))
     }).toSeq.sortBy(_._1) // sort by termId
   }
 
