@@ -1,26 +1,26 @@
 package com.chimpler.sparknaivebayesreuters
 
-import java.io.{FilenameFilter, File}
-import org.apache.spark.mllib.classification.{NaiveBayesModel, NaiveBayes}
-import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.SparkContext
-import org.apache.spark.mllib.linalg.Vectors
-import scala.collection.mutable
-import com.gravity.goose.{Goose, Configuration}
+import java.io.{File, FilenameFilter}
+
+import com.gravity.goose.{Configuration, Goose}
 import jline.ConsoleReader
-import java.util
+import org.apache.spark.SparkContext
+import org.apache.spark.mllib.classification.{NaiveBayes, NaiveBayesModel}
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.regression.LabeledPoint
 
 object NaiveBayesExample extends App {
 
-  val sc = new SparkContext("local", "naivebayes")
+  // 4 workers
+  val sc = new SparkContext("local[4]", "naivebayes")
 
-  //    if (args.length == 0) {
-  //      println("usage: naive <directory>")
-  //      sys.exit()
-  //    }
-  //
-  //    listFiles(args.head)
-  val naiveBayesAndDictionaries = createNaiveBayesModel("reuters")
+  val dataDir = if (args.length == 1) {
+    args.head
+  } else {
+    "reuters"
+  }
+
+  val naiveBayesAndDictionaries = createNaiveBayesModel(dataDir)
   console(naiveBayesAndDictionaries)
 
   /**
@@ -88,9 +88,12 @@ object NaiveBayesExample extends App {
 
     // compute TFIDF and generate vectors
     // for IDF
-    val idfs = (termDocsRdd.flatMap(termDoc => termDoc.terms.map((termDoc.doc, _))).distinct().groupBy(_._2) map {
+    val idfs = (termDocsRdd.flatMap(termDoc => termDoc.terms.map((termDoc.doc, _))).distinct().groupBy(_._2) collect {
       // mapValues not implemented :-(
-      case (term, docs) => term -> numDocs.toDouble
+      // if term is present in less than 3 documents then remove it
+      case (term, docs) if docs.size > 3 =>
+        println(docs.size)
+        term -> (numDocs.toDouble / docs.size.toDouble)
     }).collect.toMap
 
     val tfidfs = termDocsRdd flatMap {
@@ -104,8 +107,6 @@ object NaiveBayesExample extends App {
         }
     }
 
-    println("TFIDFS: " + tfidfs.collect().head.features.toArray.mkString(","))
-    println("LABELS: " + labels.mkString("[", ", ", "]"))
     val model = NaiveBayes.train(tfidfs)
     NaiveBayesAndDictionaries(model, termDict, labelDict, idfs)
   }
