@@ -1,7 +1,7 @@
 blog-spark-naive-bayes-reuters
 ==============================
 
-Simple example on how to use Naive Bayes on Spark using the popular Reuters 21578 dataset
+Simple example on how to use Naive Bayes on Spark using the popular Reuters 21578 dataset. More info on our blog: http://chimpler.wordpress.com/2014/06/11/classifiying-documents-using-naive-bayes-on-apache-spark-mllib/
 
 Requirements
 ============
