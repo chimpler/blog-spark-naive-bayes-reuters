@@ -48,11 +48,11 @@ object NaiveBayesExample extends App {
     config.setEnableImageFetching(false)
     val goose = new Goose(config)
     val content = goose.extractContent(url).cleanedArticleText
+    // tokenize content and stem it
     val tokens = Tokenizer.tokenize(content)
-
+    // compute TFIDF vector
     val tfIdfs = naiveBayesAndDictionaries.termDictionary.tfIdfs(tokens, naiveBayesAndDictionaries.idfs)
     val vector = naiveBayesAndDictionaries.termDictionary.vectorize(tfIdfs)
-
     val labelId = naiveBayesAndDictionaries.model.predict(vector)
 
     // convert label from double
@@ -92,13 +92,13 @@ object NaiveBayesExample extends App {
       // mapValues not implemented :-(
       // if term is present in less than 3 documents then remove it
       case (term, docs) if docs.size > 3 =>
-        println(docs.size)
         term -> (numDocs.toDouble / docs.size.toDouble)
     }).collect.toMap
 
     val tfidfs = termDocsRdd flatMap {
       termDoc =>
         val termPairs = termDict.tfIdfs(termDoc.terms, idfs)
+        // we consider here that a document only belongs to the first label
         termDoc.labels.headOption.map {
           label =>
             val labelId = labelDict.indexOf(label).toDouble
