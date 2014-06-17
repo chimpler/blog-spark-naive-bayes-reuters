@@ -18,7 +18,7 @@ libraryDependencies <<= scalaVersion {
     // Guava for the dictionary
     "com.google.guava" % "guava" % "17.0",
     // article extractor
-    "com.gravity" %% "goose" % "2.1.23-SNAPSHOT"
+    "com.gravity" %% "goose" % "2.1.23"
   )
 }
 
