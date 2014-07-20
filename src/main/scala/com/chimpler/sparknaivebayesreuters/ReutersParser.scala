@@ -5,7 +5,7 @@ import scala.io.Source
 import scala.collection.mutable
 
 object ReutersParser {
-  def PopularCategories = Seq("money", "fx", "crude", "grain", "trade", "interest", "wheat", "ship", "corn", "oil", "dlr", "gas", "oilseed", "supply", "sugar", "gnp", "coffee", "veg", "gold", "nat", "soybean", "bop", "livestock", "TopicCount", "cpi")
+  def PopularCategories = Seq("money", "fx", "crude", "grain", "trade", "interest", "wheat", "ship", "corn", "oil", "dlr", "gas", "oilseed", "supply", "sugar", "gnp", "coffee", "veg", "gold", "nat", "soybean", "bop", "livestock", "cpi")
 
   def parseAll(xmlFiles: Iterable[String]) = xmlFiles flatMap parse
 
